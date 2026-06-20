@@ -35,7 +35,7 @@ def _fmt_task_group(tasks: list[dict]) -> list[str]:
     for t in tasks:
         date = _fmt_date(t["created_at"])
         if date != current_date:
-            lines.append(f"  {date}")
+            lines.append(f"    {date}")
             current_date = date
         body = html.escape(_truncate_body(t["body"]))
         lines.append(f"<code>{t['hash']}</code>  {body}")
@@ -52,12 +52,12 @@ def fmt_task_list(assignee: str, tasks: list[dict]) -> str:
     lines = [f"Задачи {html.escape(assignee)}", ""]
 
     if open_tasks:
-        lines.append("Открытые")
+        lines.append("<b>Открытые</b>")
         lines.extend(_fmt_task_group(open_tasks))
         lines.append("")
 
     if done_tasks:
-        lines.append("Сделано")
+        lines.append("<b>Сделано</b>")
         lines.extend(_fmt_task_group(done_tasks))
         lines.append("")
 

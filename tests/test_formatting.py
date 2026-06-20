@@ -69,8 +69,8 @@ class TestFmtTaskList:
             make_task(hash_="bbb2222", status="done", body="Done task"),
         ]
         result = fmt_task_list("@avoiko", tasks)
-        assert "Открытые" in result
-        assert "Сделано" in result
+        assert "<b>Открытые</b>" in result
+        assert "<b>Сделано</b>" in result
         assert "aaa1111" in result
         assert "bbb2222" in result
 
@@ -107,9 +107,9 @@ class TestFmtTaskList:
             make_task(hash_="older02", status="open", created_at=ts("10.06.2026")),
         ]
         result = fmt_task_list("@avoiko", tasks)
-        # both dates shown, newest first, the shared date printed once
-        assert "  20.06.2026" in result
-        assert "  10.06.2026" in result
+        # both dates shown (4-space indent), newest first, shared date printed once
+        assert "    20.06.2026" in result
+        assert "    10.06.2026" in result
         assert result.index("20.06.2026") < result.index("10.06.2026")
         assert result.count("10.06.2026") == 1
 
