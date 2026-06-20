@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at  INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_comments_task ON comments(task_id);
+
+CREATE TABLE IF NOT EXISTS chat_members (
+  chat_id        INTEGER NOT NULL,
+  username_lower TEXT NOT NULL,
+  username       TEXT NOT NULL,
+  PRIMARY KEY (chat_id, username_lower)
+);
 """
 
 
@@ -79,7 +86,7 @@ async def list_tasks_by_assignee(db_path: str, assignee: str) -> list[dict]:
         conn.row_factory = aiosqlite.Row
         async with conn.execute(
             """
-            SELECT * FROM tasks WHERE assignee = ?
+            SELECT * FROM tasks WHERE assignee = ? COLLATE NOCASE
             ORDER BY
               CASE status WHEN 'open' THEN 0 ELSE 1 END,
               created_at ASC
@@ -153,3 +160,36 @@ async def get_comments_for_task(db_path: str, hash_: str) -> list[dict]:
         ) as cur:
             rows = await cur.fetchall()
         return [dict(r) for r in rows]
+
+
+async def record_member(db_path: str, chat_id: int, username: str) -> None:
+    """Remember that *username* has been seen in *chat_id* (case-insensitive key)."""
+    async with aiosqlite.connect(db_path) as conn:
+        await conn.execute(
+            """
+            INSERT INTO chat_members (chat_id, username_lower, username)
+            VALUES (?, ?, ?)
+            ON CONFLICT(chat_id, username_lower) DO UPDATE SET username = excluded.username
+            """,
+            (chat_id, username.lower(), username),
+        )
+        await conn.commit()
+
+
+async def get_known_member(
+    db_path: str, chat_id: int, username: str
+) -> Optional[str]:
+    """
+    Look up a username among known members of a chat, case-insensitively.
+    *username* may include a leading '@'. Returns the canonical '@username'
+    (last-seen casing) if known, else None.
+    """
+    uname = username.lstrip("@").lower()
+    async with aiosqlite.connect(db_path) as conn:
+        conn.row_factory = aiosqlite.Row
+        async with conn.execute(
+            "SELECT username FROM chat_members WHERE chat_id = ? AND username_lower = ?",
+            (chat_id, uname),
+        ) as cur:
+            row = await cur.fetchone()
+        return f"@{row['username']}" if row else None

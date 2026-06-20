@@ -1,8 +1,9 @@
 import logging
+from typing import Any, Awaitable, Callable
 
-from aiogram import Router
+from aiogram import BaseMiddleware, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, TelegramObject
 
 from .db import (
     create_task,
@@ -12,6 +13,8 @@ from .db import (
     set_task_status,
     add_comment,
     get_comments_for_task,
+    record_member,
+    get_known_member,
 )
 from .hashing import generate_unique_hash
 from .parsing import (
@@ -31,6 +34,7 @@ from .formatting import (
     fmt_comment_added,
     fmt_not_found,
     fmt_addtask_usage,
+    fmt_unknown_members,
     fmt_help,
 )
 
@@ -39,6 +43,28 @@ import aiosqlite
 logger = logging.getLogger(__name__)
 
 router = Router()
+
+
+class MemberTrackingMiddleware(BaseMiddleware):
+    """Record every message sender (with a username) as a known chat member."""
+
+    def __init__(self, db_path: str) -> None:
+        self.db_path = db_path
+
+    async def __call__(
+        self,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: dict[str, Any],
+    ) -> Any:
+        user = event.from_user
+        chat = event.chat
+        if user is not None and user.username and chat is not None:
+            try:
+                await record_member(self.db_path, chat.id, user.username)
+            except Exception:
+                logger.exception("failed to record chat member")
+        return await handler(event, data)
 
 
 def _sender_identity(message: Message) -> str:
@@ -70,6 +96,28 @@ async def cmd_addtask(message: Message, db_path: str) -> None:
         logger.warning("addtask parse error from %s: %s", sender, error)
         await message.reply(fmt_addtask_usage())
         return
+
+    # Validate @mentions against known chat members (case-insensitive),
+    # auto-correcting casing. Non-mention values (sender without a username)
+    # are passed through unchecked.
+    unknown: list[str] = []
+    canonical: dict[str, str] = {}
+    for name in {assignee, creator}:
+        if not name.startswith("@"):
+            continue
+        match = await get_known_member(db_path, message.chat.id, name)
+        if match is None:
+            unknown.append(name)
+        else:
+            canonical[name] = match
+
+    if unknown:
+        logger.warning("addtask: unknown members %s from %s", unknown, sender)
+        await message.reply(fmt_unknown_members(unknown))
+        return
+
+    assignee = canonical.get(assignee, assignee)
+    creator = canonical.get(creator, creator)
 
     async with aiosqlite.connect(db_path) as conn:
         hash_ = await generate_unique_hash(conn)

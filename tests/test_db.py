@@ -10,6 +10,8 @@ from taskbara.db import (
     set_task_status,
     add_comment,
     get_comments_for_task,
+    record_member,
+    get_known_member,
 )
 
 
@@ -154,3 +156,39 @@ async def test_get_comments_nonexistent_task(db_path):
     await init_db(db_path)
     comments = await get_comments_for_task(db_path, "0000000")
     assert comments == []
+
+
+async def test_member_lookup_case_insensitive(db_path):
+    await init_db(db_path)
+    await record_member(db_path, 1, "FlufffyMelon")
+
+    # any casing resolves to the canonical last-seen username
+    assert await get_known_member(db_path, 1, "@flufffymelon") == "@FlufffyMelon"
+    assert await get_known_member(db_path, 1, "@FLUFFFYMELON") == "@FlufffyMelon"
+    assert await get_known_member(db_path, 1, "flufffymelon") == "@FlufffyMelon"
+
+
+async def test_member_unknown_returns_none(db_path):
+    await init_db(db_path)
+    await record_member(db_path, 1, "alice")
+    assert await get_known_member(db_path, 1, "@bob") is None
+
+
+async def test_member_scoped_per_chat(db_path):
+    await init_db(db_path)
+    await record_member(db_path, 1, "alice")
+    assert await get_known_member(db_path, 2, "@alice") is None
+
+
+async def test_member_upsert_updates_casing(db_path):
+    await init_db(db_path)
+    await record_member(db_path, 1, "alice")
+    await record_member(db_path, 1, "Alice")  # same user, new casing
+    assert await get_known_member(db_path, 1, "@alice") == "@Alice"
+
+
+async def test_list_tasks_assignee_case_insensitive(db_path):
+    await init_db(db_path)
+    await create_task(db_path, "4951cd3", 1, "@a", "@FlufffyMelon", "body")
+    tasks = await list_tasks_by_assignee(db_path, "@flufffymelon")
+    assert len(tasks) == 1

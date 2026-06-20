@@ -7,7 +7,7 @@ from aiogram.types import ErrorEvent
 from .config import load_config
 from .logging_setup import setup_logging
 from .db import init_db
-from .handlers import router
+from .handlers import router, MemberTrackingMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,9 @@ async def main() -> None:
 
     # Inject db_path into handlers via dispatcher workflow data
     dp["db_path"] = config.db_path
+
+    # Track chat members on every incoming message (for /addtask validation)
+    dp.message.outer_middleware(MemberTrackingMiddleware(config.db_path))
 
     dp.include_router(router)
 
