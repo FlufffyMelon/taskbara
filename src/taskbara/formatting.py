@@ -73,17 +73,17 @@ def fmt_task_list(assignee: str, tasks: list[dict]) -> str:
 def fmt_task_detail(task: dict, comments: list[dict]) -> str:
     label = _status_label(task["status"])
     lines = [
-        f"{task['hash']} – {label}",
-        f"кому: {task['assignee']}   от: {task['creator']}",
+        f"<code>{task['hash']}</code> – {label}",
+        f"кому: {html.escape(task['assignee'])}   от: {html.escape(task['creator'])}",
         "",
-        task["body"],
+        html.escape(task["body"]),
     ]
 
     if comments:
         lines.append("")
         lines.append("Комментарии:")
         for c in comments:
-            lines.append(f"  {c['author']}: {c['body']}")
+            lines.append(f"  {html.escape(c['author'])}: {html.escape(c['body'])}")
 
     return "\n".join(lines)
 

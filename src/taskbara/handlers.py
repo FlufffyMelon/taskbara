@@ -166,7 +166,7 @@ async def cmd_task(message: Message, db_path: str) -> None:
 
     comments = await get_comments_for_task(db_path, hash_)
     logger.info("task %s viewed by %s", hash_, sender)
-    await message.reply(fmt_task_detail(task, comments))
+    await message.reply(fmt_task_detail(task, comments), parse_mode="HTML")
 
 
 @router.message(Command("edit"))

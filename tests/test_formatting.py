@@ -124,7 +124,7 @@ class TestFmtTaskDetail:
     def test_open_task_no_comments(self):
         task = make_task(status="open")
         result = fmt_task_detail(task, [])
-        assert "4951cd3 – открыта" in result
+        assert "<code>4951cd3</code> – открыта" in result
         assert "кому: @avoiko" in result
         assert "от: @oryabkov" in result
         assert "Fix the login bug" in result
