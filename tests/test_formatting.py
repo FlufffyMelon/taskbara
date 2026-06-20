@@ -90,6 +90,35 @@ class TestFmtTaskList:
         assert "First line" in result
         assert "Second line" not in result
 
+    def test_hash_wrapped_in_code(self):
+        tasks = [make_task(hash_="aaa1111", status="open")]
+        result = fmt_task_list("@avoiko", tasks)
+        assert "<code>aaa1111</code>" in result
+
+    def test_date_subheader_and_grouping(self):
+        from datetime import datetime
+
+        def ts(d):
+            return int(datetime.strptime(d, "%d.%m.%Y").timestamp())
+
+        tasks = [
+            make_task(hash_="newest0", status="open", created_at=ts("20.06.2026")),
+            make_task(hash_="older01", status="open", created_at=ts("10.06.2026")),
+            make_task(hash_="older02", status="open", created_at=ts("10.06.2026")),
+        ]
+        result = fmt_task_list("@avoiko", tasks)
+        # both dates shown, newest first, the shared date printed once
+        assert "  20.06.2026" in result
+        assert "  10.06.2026" in result
+        assert result.index("20.06.2026") < result.index("10.06.2026")
+        assert result.count("10.06.2026") == 1
+
+    def test_body_html_escaped(self):
+        tasks = [make_task(hash_="aaa1111", status="open", body="a < b & c")]
+        result = fmt_task_list("@avoiko", tasks)
+        assert "&lt;" in result and "&amp;" in result
+        assert "a < b" not in result
+
 
 class TestFmtTaskDetail:
     def test_open_task_no_comments(self):

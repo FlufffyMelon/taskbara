@@ -143,7 +143,7 @@ async def cmd_tasks(message: Message, db_path: str) -> None:
     target = parse_tasks_arg(first_line, sender)
     tasks = await list_tasks_by_assignee(db_path, target)
     logger.info("tasks query for %s by %s: %d results", target, sender, len(tasks))
-    await message.reply(fmt_task_list(target, tasks))
+    await message.reply(fmt_task_list(target, tasks), parse_mode="HTML")
 
 
 @router.message(Command("task"))

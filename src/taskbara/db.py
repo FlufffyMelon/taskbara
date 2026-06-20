@@ -89,7 +89,7 @@ async def list_tasks_by_assignee(db_path: str, assignee: str) -> list[dict]:
             SELECT * FROM tasks WHERE assignee = ? COLLATE NOCASE
             ORDER BY
               CASE status WHEN 'open' THEN 0 ELSE 1 END,
-              created_at ASC
+              created_at DESC
             """,
             (assignee,),
         ) as cur:

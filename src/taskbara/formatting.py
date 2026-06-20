@@ -1,4 +1,5 @@
-from typing import Optional
+import html
+from datetime import datetime
 
 BODY_TRUNCATE_LEN = 50
 
@@ -23,6 +24,24 @@ def fmt_task_created(hash_: str, creator: str, assignee: str, body: str) -> str:
 
 # ── Task list ─────────────────────────────────────────────────────────────────
 
+def _fmt_date(ts: int) -> str:
+    return datetime.fromtimestamp(ts).strftime("%d.%m.%Y")
+
+
+def _fmt_task_group(tasks: list[dict]) -> list[str]:
+    """Render tasks (assumed newest-first) with date subheaders and copyable hashes."""
+    lines: list[str] = []
+    current_date = None
+    for t in tasks:
+        date = _fmt_date(t["created_at"])
+        if date != current_date:
+            lines.append(f"  {date}")
+            current_date = date
+        body = html.escape(_truncate_body(t["body"]))
+        lines.append(f"<code>{t['hash']}</code>  {body}")
+    return lines
+
+
 def fmt_task_list(assignee: str, tasks: list[dict]) -> str:
     if not tasks:
         return "Нет задач"
@@ -30,18 +49,16 @@ def fmt_task_list(assignee: str, tasks: list[dict]) -> str:
     open_tasks = [t for t in tasks if t["status"] == "open"]
     done_tasks = [t for t in tasks if t["status"] == "done"]
 
-    lines = [f"Задачи {assignee}", ""]
+    lines = [f"Задачи {html.escape(assignee)}", ""]
 
     if open_tasks:
         lines.append("Открытые")
-        for t in open_tasks:
-            lines.append(f"  {t['hash']}  {_truncate_body(t['body'])}")
+        lines.extend(_fmt_task_group(open_tasks))
         lines.append("")
 
     if done_tasks:
         lines.append("Сделано")
-        for t in done_tasks:
-            lines.append(f"  {t['hash']}  {_truncate_body(t['body'])}")
+        lines.extend(_fmt_task_group(done_tasks))
         lines.append("")
 
     # remove trailing blank line
