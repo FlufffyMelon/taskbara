@@ -56,7 +56,7 @@ def fmt_task_list(assignee: str, tasks: list[dict]) -> str:
 def fmt_task_detail(task: dict, comments: list[dict]) -> str:
     label = _status_label(task["status"])
     lines = [
-        f"{task['hash']} — {label}",
+        f"{task['hash']} – {label}",
         f"кому: {task['assignee']}   от: {task['creator']}",
         "",
         task["body"],
@@ -78,7 +78,7 @@ def fmt_task_updated(hash_: str) -> str:
 
 
 def fmt_task_done(hash_: str) -> str:
-    return f"Задача {hash_} — сделано"
+    return f"Задача {hash_} – сделано"
 
 
 def fmt_task_reopened(hash_: str) -> str:
@@ -99,19 +99,26 @@ def fmt_not_found(hash_: str) -> str:
 
 def fmt_help() -> str:
     return (
-        "taskbara — трекер задач в чате. Команды:\n"
+        "<b>taskbara</b> – трекер задач прямо в чате.\n"
         "\n"
-        "/addtask @кому текст — создать задачу (постановщик = ты)\n"
-        "/addtask @от to @кому текст — создать задачу с указанным постановщиком\n"
-        "    Текст задачи пиши с новой строки под командой.\n"
-        "/tasks @пользователь — задачи, поставленные пользователю\n"
-        "/tasks — твои задачи\n"
-        "/task <хэш> — текст задачи и комментарии\n"
-        "/edit <хэш> новый текст — заменить текст задачи\n"
-        "/done <хэш> — пометить задачу сделанной\n"
-        "/reopen <хэш> — вернуть задачу в открытые\n"
-        "/addcomment <хэш> текст — добавить комментарий\n"
-        "/help — показать эту справку"
+        "<b>Создать задачу</b>\n"
+        "/addtask @кому текст\n"
+        "/addtask @от to @кому текст\n"
+        "<i>текст задачи – с новой строки под командой</i>\n"
+        "\n"
+        "<b>Посмотреть</b>\n"
+        "/tasks @кто – задачи пользователя\n"
+        "/tasks – твои задачи\n"
+        "/task хэш – задача и комментарии\n"
+        "\n"
+        "<b>Статус</b>\n"
+        "/done хэш – пометить сделанной\n"
+        "/reopen хэш – вернуть в открытые\n"
+        "\n"
+        "<b>Ещё</b>\n"
+        "/edit хэш текст – заменить текст\n"
+        "/addcomment хэш текст – добавить комментарий\n"
+        "/help – эта справка"
     )
 
 
@@ -121,5 +128,5 @@ def fmt_addtask_usage() -> str:
         "/addtask @кому текст задачи\n"
         "или\n"
         "/addtask @от to @кому текст задачи\n\n"
-        "Текст задачи — в теле сообщения (новая строка после команды)."
+        "Текст задачи – в теле сообщения (новая строка после команды)."
     )

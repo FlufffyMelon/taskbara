@@ -56,7 +56,7 @@ def _sender_identity(message: Message) -> str:
 @router.message(Command("help", "start"))
 async def cmd_help(message: Message) -> None:
     logger.info("help requested by %s", _sender_identity(message))
-    await message.reply(fmt_help())
+    await message.reply(fmt_help(), parse_mode="HTML")
 
 
 @router.message(Command("addtask"))

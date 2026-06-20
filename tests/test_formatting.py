@@ -95,7 +95,7 @@ class TestFmtTaskDetail:
     def test_open_task_no_comments(self):
         task = make_task(status="open")
         result = fmt_task_detail(task, [])
-        assert "4951cd3 — открыта" in result
+        assert "4951cd3 – открыта" in result
         assert "кому: @avoiko" in result
         assert "от: @oryabkov" in result
         assert "Fix the login bug" in result
@@ -104,7 +104,7 @@ class TestFmtTaskDetail:
     def test_done_task(self):
         task = make_task(status="done")
         result = fmt_task_detail(task, [])
-        assert "— сделано" in result
+        assert "– сделано" in result
 
     def test_with_comments(self):
         task = make_task()
@@ -123,7 +123,7 @@ class TestConfirmations:
         assert fmt_task_updated("4951cd3") == "Задача 4951cd3 обновлена"
 
     def test_done(self):
-        assert fmt_task_done("4951cd3") == "Задача 4951cd3 — сделано"
+        assert fmt_task_done("4951cd3") == "Задача 4951cd3 – сделано"
 
     def test_reopened(self):
         assert fmt_task_reopened("4951cd3") == "Задача 4951cd3 снова открыта"
