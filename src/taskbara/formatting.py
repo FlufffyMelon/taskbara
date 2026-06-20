@@ -1,0 +1,107 @@
+from typing import Optional
+
+BODY_TRUNCATE_LEN = 50
+
+
+def _truncate_body(body: str) -> str:
+    """Take first line of body, truncate to BODY_TRUNCATE_LEN chars."""
+    first_line = body.split("\n", 1)[0].strip()
+    if len(first_line) > BODY_TRUNCATE_LEN:
+        return first_line[:BODY_TRUNCATE_LEN] + "…"
+    return first_line
+
+
+def _status_label(status: str) -> str:
+    return "открыта" if status == "open" else "сделано"
+
+
+# ── Task created ──────────────────────────────────────────────────────────────
+
+def fmt_task_created(hash_: str, creator: str, assignee: str, body: str) -> str:
+    return f"Создана задача {hash_}\nкому: {assignee}   от: {creator}\n\n{body}"
+
+
+# ── Task list ─────────────────────────────────────────────────────────────────
+
+def fmt_task_list(assignee: str, tasks: list[dict]) -> str:
+    if not tasks:
+        return "Нет задач"
+
+    open_tasks = [t for t in tasks if t["status"] == "open"]
+    done_tasks = [t for t in tasks if t["status"] == "done"]
+
+    lines = [f"Задачи {assignee}", ""]
+
+    if open_tasks:
+        lines.append("Открытые")
+        for t in open_tasks:
+            lines.append(f"  {t['hash']}  {_truncate_body(t['body'])}")
+        lines.append("")
+
+    if done_tasks:
+        lines.append("Сделано")
+        for t in done_tasks:
+            lines.append(f"  {t['hash']}  {_truncate_body(t['body'])}")
+        lines.append("")
+
+    # remove trailing blank line
+    while lines and lines[-1] == "":
+        lines.pop()
+
+    return "\n".join(lines)
+
+
+# ── Task detail ───────────────────────────────────────────────────────────────
+
+def fmt_task_detail(task: dict, comments: list[dict]) -> str:
+    label = _status_label(task["status"])
+    lines = [
+        f"{task['hash']} — {label}",
+        f"кому: {task['assignee']}   от: {task['creator']}",
+        "",
+        task["body"],
+    ]
+
+    if comments:
+        lines.append("")
+        lines.append("Комментарии:")
+        for c in comments:
+            lines.append(f"  {c['author']}: {c['body']}")
+
+    return "\n".join(lines)
+
+
+# ── Short confirmations ───────────────────────────────────────────────────────
+
+def fmt_task_updated(hash_: str) -> str:
+    return f"Задача {hash_} обновлена"
+
+
+def fmt_task_done(hash_: str) -> str:
+    return f"Задача {hash_} — сделано"
+
+
+def fmt_task_reopened(hash_: str) -> str:
+    return f"Задача {hash_} снова открыта"
+
+
+def fmt_comment_added(hash_: str) -> str:
+    return f"Комментарий добавлен к {hash_}"
+
+
+# ── Not found ─────────────────────────────────────────────────────────────────
+
+def fmt_not_found(hash_: str) -> str:
+    return f"Задача {hash_} не найдена"
+
+
+# ── Usage hints ───────────────────────────────────────────────────────────────
+
+def fmt_addtask_usage() -> str:
+    return (
+        "Использование:\n"
+        "/addtask @кому текст задачи\n"
+        "или\n"
+        "/addtask @от to @кому текст задачи\n\n"
+        "Текст задачи — в теле сообщения (новая строка после команды)."
+    )
