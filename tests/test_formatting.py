@@ -8,6 +8,7 @@ from taskbara.formatting import (
     fmt_task_reopened,
     fmt_comment_added,
     fmt_not_found,
+    fmt_help,
     BODY_TRUNCATE_LEN,
 )
 
@@ -132,3 +133,10 @@ class TestConfirmations:
 
     def test_not_found(self):
         assert fmt_not_found("4951cd3") == "Задача 4951cd3 не найдена"
+
+
+class TestHelp:
+    def test_lists_all_commands(self):
+        result = fmt_help()
+        for cmd in ("/addtask", "/tasks", "/task", "/edit", "/done", "/reopen", "/addcomment", "/help"):
+            assert cmd in result

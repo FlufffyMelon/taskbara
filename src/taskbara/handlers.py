@@ -31,6 +31,7 @@ from .formatting import (
     fmt_comment_added,
     fmt_not_found,
     fmt_addtask_usage,
+    fmt_help,
 )
 
 import aiosqlite
@@ -50,6 +51,12 @@ def _sender_identity(message: Message) -> str:
     if user.first_name:
         return user.first_name
     return f"id:{user.id}"
+
+
+@router.message(Command("help", "start"))
+async def cmd_help(message: Message) -> None:
+    logger.info("help requested by %s", _sender_identity(message))
+    await message.reply(fmt_help())
 
 
 @router.message(Command("addtask"))
