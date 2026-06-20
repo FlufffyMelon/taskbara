@@ -19,7 +19,11 @@ def _status_label(status: str) -> str:
 # ── Task created ──────────────────────────────────────────────────────────────
 
 def fmt_task_created(hash_: str, creator: str, assignee: str, body: str) -> str:
-    return f"Создана задача {hash_}\nкому: {assignee}   от: {creator}\n\n{body}"
+    return (
+        f"Создана задача <code>{hash_}</code>\n"
+        f"кому: {html.escape(assignee)}   от: {html.escape(creator)}\n\n"
+        f"{html.escape(body)}"
+    )
 
 
 # ── Task list ─────────────────────────────────────────────────────────────────
@@ -91,25 +95,25 @@ def fmt_task_detail(task: dict, comments: list[dict]) -> str:
 # ── Short confirmations ───────────────────────────────────────────────────────
 
 def fmt_task_updated(hash_: str) -> str:
-    return f"Задача {hash_} обновлена"
+    return f"Задача <code>{hash_}</code> обновлена"
 
 
 def fmt_task_done(hash_: str) -> str:
-    return f"Задача {hash_} – сделано"
+    return f"Задача <code>{hash_}</code> – сделано"
 
 
 def fmt_task_reopened(hash_: str) -> str:
-    return f"Задача {hash_} снова открыта"
+    return f"Задача <code>{hash_}</code> снова открыта"
 
 
 def fmt_comment_added(hash_: str) -> str:
-    return f"Комментарий добавлен к {hash_}"
+    return f"Комментарий добавлен к <code>{hash_}</code>"
 
 
 # ── Not found ─────────────────────────────────────────────────────────────────
 
 def fmt_not_found(hash_: str) -> str:
-    return f"Задача {hash_} не найдена"
+    return f"Задача <code>{hash_}</code> не найдена"
 
 
 # ── Usage hints ───────────────────────────────────────────────────────────────

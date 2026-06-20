@@ -131,7 +131,7 @@ async def cmd_addtask(message: Message, db_path: str) -> None:
         body=body,
     )
     logger.info("Task %s created by %s for %s", hash_, creator, assignee)
-    await message.reply(fmt_task_created(hash_, creator, assignee, body))
+    await message.reply(fmt_task_created(hash_, creator, assignee, body), parse_mode="HTML")
 
 
 @router.message(Command("tasks"))
@@ -161,7 +161,7 @@ async def cmd_task(message: Message, db_path: str) -> None:
     task = await get_task_by_hash(db_path, hash_)
     if not task:
         logger.warning("task: hash %s not found (requested by %s)", hash_, sender)
-        await message.reply(fmt_not_found(hash_))
+        await message.reply(fmt_not_found(hash_), parse_mode="HTML")
         return
 
     comments = await get_comments_for_task(db_path, hash_)
@@ -188,11 +188,11 @@ async def cmd_edit(message: Message, db_path: str) -> None:
     updated = await update_task_body(db_path, hash_, body)
     if not updated:
         logger.warning("edit: hash %s not found (by %s)", hash_, sender)
-        await message.reply(fmt_not_found(hash_))
+        await message.reply(fmt_not_found(hash_), parse_mode="HTML")
         return
 
     logger.info("Task %s body updated by %s", hash_, sender)
-    await message.reply(fmt_task_updated(hash_))
+    await message.reply(fmt_task_updated(hash_), parse_mode="HTML")
 
 
 @router.message(Command("done"))
@@ -210,11 +210,11 @@ async def cmd_done(message: Message, db_path: str) -> None:
     updated = await set_task_status(db_path, hash_, "done")
     if not updated:
         logger.warning("done: hash %s not found (by %s)", hash_, sender)
-        await message.reply(fmt_not_found(hash_))
+        await message.reply(fmt_not_found(hash_), parse_mode="HTML")
         return
 
     logger.info("Task %s marked done by %s", hash_, sender)
-    await message.reply(fmt_task_done(hash_))
+    await message.reply(fmt_task_done(hash_), parse_mode="HTML")
 
 
 @router.message(Command(commands=["reopen", "всефигнядавайпоновой"]))
@@ -232,11 +232,11 @@ async def cmd_reopen(message: Message, db_path: str) -> None:
     updated = await set_task_status(db_path, hash_, "open")
     if not updated:
         logger.warning("reopen: hash %s not found (by %s)", hash_, sender)
-        await message.reply(fmt_not_found(hash_))
+        await message.reply(fmt_not_found(hash_), parse_mode="HTML")
         return
 
     logger.info("Task %s reopened by %s", hash_, sender)
-    await message.reply(fmt_task_reopened(hash_))
+    await message.reply(fmt_task_reopened(hash_), parse_mode="HTML")
 
 
 @router.message(Command("addcomment"))
@@ -254,11 +254,11 @@ async def cmd_addcomment(message: Message, db_path: str) -> None:
     comment_id = await add_comment(db_path, hash_, sender, _extract_comment_body(first_line, hash_))
     if comment_id is None:
         logger.warning("addcomment: hash %s not found (by %s)", hash_, sender)
-        await message.reply(fmt_not_found(hash_))
+        await message.reply(fmt_not_found(hash_), parse_mode="HTML")
         return
 
     logger.info("Comment added to task %s by %s", hash_, sender)
-    await message.reply(fmt_comment_added(hash_))
+    await message.reply(fmt_comment_added(hash_), parse_mode="HTML")
 
 
 def _extract_comment_body(first_line: str, hash_: str) -> str:

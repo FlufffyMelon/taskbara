@@ -32,7 +32,7 @@ def make_task(hash_="4951cd3", creator="@oryabkov", assignee="@avoiko",
 class TestFmtTaskCreated:
     def test_basic(self):
         result = fmt_task_created("4951cd3", "@oryabkov", "@avoiko", "Fix the bug")
-        assert "Создана задача 4951cd3" in result
+        assert "Создана задача <code>4951cd3</code>" in result
         assert "кому: @avoiko" in result
         assert "от: @oryabkov" in result
         assert "Fix the bug" in result
@@ -40,8 +40,13 @@ class TestFmtTaskCreated:
     def test_format(self):
         result = fmt_task_created("4951cd3", "@a", "@b", "body")
         lines = result.split("\n")
-        assert lines[0] == "Создана задача 4951cd3"
+        assert lines[0] == "Создана задача <code>4951cd3</code>"
         assert "@b" in lines[1] and "@a" in lines[1]
+
+    def test_body_html_escaped(self):
+        result = fmt_task_created("4951cd3", "@a", "@b", "a < b & c")
+        assert "&lt;" in result and "&amp;" in result
+        assert "a < b" not in result
 
 
 class TestFmtTaskList:
@@ -149,19 +154,19 @@ class TestFmtTaskDetail:
 
 class TestConfirmations:
     def test_updated(self):
-        assert fmt_task_updated("4951cd3") == "Задача 4951cd3 обновлена"
+        assert fmt_task_updated("4951cd3") == "Задача <code>4951cd3</code> обновлена"
 
     def test_done(self):
-        assert fmt_task_done("4951cd3") == "Задача 4951cd3 – сделано"
+        assert fmt_task_done("4951cd3") == "Задача <code>4951cd3</code> – сделано"
 
     def test_reopened(self):
-        assert fmt_task_reopened("4951cd3") == "Задача 4951cd3 снова открыта"
+        assert fmt_task_reopened("4951cd3") == "Задача <code>4951cd3</code> снова открыта"
 
     def test_comment_added(self):
-        assert fmt_comment_added("4951cd3") == "Комментарий добавлен к 4951cd3"
+        assert fmt_comment_added("4951cd3") == "Комментарий добавлен к <code>4951cd3</code>"
 
     def test_not_found(self):
-        assert fmt_not_found("4951cd3") == "Задача 4951cd3 не найдена"
+        assert fmt_not_found("4951cd3") == "Задача <code>4951cd3</code> не найдена"
 
 
 class TestHelp:
