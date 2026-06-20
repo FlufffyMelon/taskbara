@@ -22,6 +22,7 @@ from .parsing import (
     parse_addtask,
     parse_tasks_arg,
     parse_addcomment,
+    parse_edit,
     extract_hash,
 )
 from .formatting import (
@@ -89,9 +90,8 @@ async def cmd_help(message: Message) -> None:
 async def cmd_addtask(message: Message, db_path: str) -> None:
     sender = _sender_identity(message)
     text = message.text or ""
-    first_line, body = split_message(text)
 
-    creator, assignee, error = parse_addtask(first_line, body, sender)
+    creator, assignee, body, error = parse_addtask(text, sender)
     if error:
         logger.warning("addtask parse error from %s: %s", sender, error)
         await message.reply(fmt_addtask_usage())
@@ -173,16 +173,11 @@ async def cmd_task(message: Message, db_path: str) -> None:
 async def cmd_edit(message: Message, db_path: str) -> None:
     sender = _sender_identity(message)
     text = message.text or ""
-    first_line, body = split_message(text)
 
-    hash_ = extract_hash(first_line)
-    if not hash_:
-        logger.warning("edit: no hash provided by %s", sender)
-        await message.reply("Использование: /edit <хэш>\n<новый текст>")
-        return
-
-    if not body:
-        await message.reply("Укажи новый текст задачи в теле сообщения.")
+    hash_, body, error = parse_edit(text)
+    if error:
+        logger.warning("edit parse error from %s: %s", sender, error)
+        await message.reply(error)
         return
 
     updated = await update_task_body(db_path, hash_, body)
@@ -243,15 +238,14 @@ async def cmd_reopen(message: Message, db_path: str) -> None:
 async def cmd_addcomment(message: Message, db_path: str) -> None:
     sender = _sender_identity(message)
     text = message.text or ""
-    first_line, _ = split_message(text)
 
-    hash_, error = parse_addcomment(first_line)
+    hash_, comment, error = parse_addcomment(text)
     if error:
         logger.warning("addcomment parse error from %s: %s", sender, error)
         await message.reply(error)
         return
 
-    comment_id = await add_comment(db_path, hash_, sender, _extract_comment_body(first_line, hash_))
+    comment_id = await add_comment(db_path, hash_, sender, comment)
     if comment_id is None:
         logger.warning("addcomment: hash %s not found (by %s)", hash_, sender)
         await message.reply(fmt_not_found(hash_), parse_mode="HTML")
@@ -259,9 +253,3 @@ async def cmd_addcomment(message: Message, db_path: str) -> None:
 
     logger.info("Comment added to task %s by %s", hash_, sender)
     await message.reply(fmt_comment_added(hash_), parse_mode="HTML")
-
-
-def _extract_comment_body(first_line: str, hash_: str) -> str:
-    """Extract the comment text portion from '/addcomment <hash> <text>'."""
-    parts = first_line.split(None, 2)
-    return parts[2] if len(parts) >= 3 else ""

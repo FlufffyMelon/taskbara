@@ -6,6 +6,7 @@ from taskbara.parsing import (
     parse_addtask,
     parse_tasks_arg,
     parse_addcomment,
+    parse_edit,
 )
 
 
@@ -61,42 +62,78 @@ class TestExtractHash:
 
 
 class TestParseAddtask:
-    def test_two_mentions_with_to(self):
-        creator, assignee, error = parse_addtask(
-            "/addtask @oryabkov to @avoiko", "Fix the bug", "@sender"
+    def test_two_mentions_with_to_same_line(self):
+        creator, assignee, body, error = parse_addtask(
+            "/addtask @oryabkov to @avoiko Fix the bug", "@sender"
         )
         assert error is None
         assert creator == "@oryabkov"
         assert assignee == "@avoiko"
+        assert body == "Fix the bug"
 
     def test_two_mentions_with_to_case_insensitive(self):
-        creator, assignee, error = parse_addtask(
-            "/addtask @alice TO @bob", "Do something", "@sender"
+        creator, assignee, body, error = parse_addtask(
+            "/addtask @alice TO @bob Do something", "@sender"
         )
         assert error is None
         assert creator == "@alice"
         assert assignee == "@bob"
+        assert body == "Do something"
 
     def test_single_mention_uses_sender(self):
-        creator, assignee, error = parse_addtask(
-            "/addtask @avoiko", "Task body", "@oryabkov"
+        creator, assignee, body, error = parse_addtask(
+            "/addtask @avoiko Task body", "@oryabkov"
         )
         assert error is None
         assert creator == "@oryabkov"
         assert assignee == "@avoiko"
+        assert body == "Task body"
+
+    def test_body_on_next_line(self):
+        creator, assignee, body, error = parse_addtask(
+            "/addtask @avoiko\nTask body here", "@oryabkov"
+        )
+        assert error is None
+        assert assignee == "@avoiko"
+        assert body == "Task body here"
+
+    def test_body_with_extra_whitespace_and_newlines_trimmed(self):
+        creator, assignee, body, error = parse_addtask(
+            "/addtask @avoiko    \n\n  Task body  \n\n", "@oryabkov"
+        )
+        assert error is None
+        assert assignee == "@avoiko"
+        assert body == "Task body"
+
+    def test_multiline_body_preserved(self):
+        _, _, body, error = parse_addtask(
+            "/addtask @avoiko line one\nline two", "@s"
+        )
+        assert error is None
+        assert body == "line one\nline two"
+
+    def test_body_starting_with_to_is_not_a_reviewer(self):
+        # "to something" without a following mention stays in the body
+        creator, assignee, body, error = parse_addtask(
+            "/addtask @avoiko to do laundry", "@oryabkov"
+        )
+        assert error is None
+        assert assignee == "@avoiko"
+        assert creator == "@oryabkov"
+        assert body == "to do laundry"
 
     def test_no_mention_returns_error(self):
-        creator, assignee, error = parse_addtask("/addtask", "Task body", "@sender")
+        creator, assignee, body, error = parse_addtask("/addtask", "@sender")
         assert error is not None
         assert creator is None
         assert assignee is None
 
     def test_empty_body_returns_error(self):
-        creator, assignee, error = parse_addtask("/addtask @user", "", "@sender")
+        creator, assignee, body, error = parse_addtask("/addtask @user", "@sender")
         assert error is not None
 
-    def test_body_empty_string(self):
-        _, _, error = parse_addtask("/addtask @alice to @bob", "", "@sender")
+    def test_empty_body_two_mentions(self):
+        _, _, _, error = parse_addtask("/addtask @alice to @bob", "@sender")
         assert error is not None
 
 
@@ -111,22 +148,62 @@ class TestParseTasksArg:
 
 
 class TestParseAddcomment:
-    def test_valid(self):
-        hash_, error = parse_addcomment("/addcomment 4951cd3 Great work!")
+    def test_valid_same_line(self):
+        hash_, comment, error = parse_addcomment("/addcomment 4951cd3 Great work!")
         assert error is None
         assert hash_ == "4951cd3"
+        assert comment == "Great work!"
+
+    def test_text_on_next_line(self):
+        hash_, comment, error = parse_addcomment("/addcomment f2fd10d\nПроверка")
+        assert error is None
+        assert hash_ == "f2fd10d"
+        assert comment == "Проверка"
+
+    def test_whitespace_and_newlines_trimmed(self):
+        hash_, comment, error = parse_addcomment("/addcomment f2fd10d   \n\n  Проверка  \n")
+        assert error is None
+        assert comment == "Проверка"
+
+    def test_multiline_comment_preserved(self):
+        hash_, comment, error = parse_addcomment("/addcomment 4951cd3 line one\nline two")
+        assert error is None
+        assert comment == "line one\nline two"
 
     def test_missing_hash(self):
-        hash_, error = parse_addcomment("/addcomment")
+        hash_, comment, error = parse_addcomment("/addcomment")
         assert hash_ is None
         assert error is not None
 
     def test_missing_text(self):
-        hash_, error = parse_addcomment("/addcomment 4951cd3")
+        hash_, comment, error = parse_addcomment("/addcomment 4951cd3")
         assert hash_ is None
         assert error is not None
 
     def test_invalid_hash_format(self):
-        hash_, error = parse_addcomment("/addcomment ZZZZZZZ text")
+        hash_, comment, error = parse_addcomment("/addcomment ZZZZZZZ text")
+        assert hash_ is None
+        assert error is not None
+
+
+class TestParseEdit:
+    def test_valid_same_line(self):
+        hash_, body, error = parse_edit("/edit 4951cd3 New task text")
+        assert error is None
+        assert hash_ == "4951cd3"
+        assert body == "New task text"
+
+    def test_text_on_next_line(self):
+        hash_, body, error = parse_edit("/edit 4951cd3\nNew text")
+        assert error is None
+        assert body == "New text"
+
+    def test_missing_text(self):
+        hash_, body, error = parse_edit("/edit 4951cd3")
+        assert hash_ is None
+        assert error is not None
+
+    def test_invalid_hash(self):
+        hash_, body, error = parse_edit("/edit nothex new text")
         assert hash_ is None
         assert error is not None
